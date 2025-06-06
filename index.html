@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>您的專屬杜拜轉機互動行程</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: UAE Flag Inspired (Muted Orange-Red primary background, White, Black/Dark Grey, Morandi Green accents) -->
+    <!-- Application Structure Plan: A tabbed interface where each tab represents a major section of the itinerary or related information. The primary navigation is horizontal tabs: Overview, Day 1, Day 2, Optional Tours, and Pre-flight Prep. Clicking a tab dynamically renders its specific content. This structure moves away from a linear timeline to a more segmented, user-controlled exploration, allowing quick access to distinct information categories. This design enhances usability for travelers who might want to quickly jump to specific details (e.g., "Day 2" for departure info) rather than scrolling through a full timeline. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Full Itinerary -> Organize daily activities -> Separate tabs for Day 1 and Day 2, with detailed activity blocks (HTML/CSS) -> Tab switching -> Provides clear separation and easy navigation for multi-day events. 2. Transportation Options -> Compare cost vs. time for specific routes -> Bar Chart (Chart.js/Canvas) within relevant activity block -> Dynamically generated on tab switch (internal to activity) -> Visual comparison aids quick decision-making for a specific segment. 3. Pre-flight Prep -> Present practical information clearly -> Collapsible Accordion (HTML/JS) in its own tab -> Click to expand/collapse -> Efficiently organizes detailed notes without overwhelming the user on initial view. 4. Optional Tours -> Highlight additional activities -> Card layout (HTML/Tailwind) in its own tab -> Static display -> Visually distinct and easy to browse for alternative explorations. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            background-color: #E88D70; /* Muted Orange-Red (Morandi-like) primary background */
+            font-family: 'Noto Sans TC', sans-serif;
+            color: #4A4A4A; /* Default dark grey text for content areas */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+        /* Styling for the main navigation tabs */
+        .main-tab-button.active {
+            border-color: #A8D1A8; /* Morandi Green accent */
+            color: #A8D1A8;
+            font-weight: 600;
+            border-bottom-width: 2px;
+        }
+        /* Styling for internal tabs within itinerary items (if any are re-introduced) */
+        .tab-button.active {
+            border-color: #A8D1A8; /* Morandi Green accent */
+            color: #A8D1A8;
+            font-weight: 600;
+        }
+        /* Ensure content cards and nav background are white for contrast */
+        .bg-white {
+            background-color: #FFFFFF;
+        }
+        /* Specific text color for header on orange-red background */
+        .header-text-on-orange-red {
+            color: #FFFFFF; /* White */
+        }
+        /* Adjusting green background for info boxes to new Morandi green scale */
+        .bg-green-100 {
+            background-color: #E8F5E9; /* Lighter shade of green for background */
+        }
+        .border-green-500 {
+            border-color: #A8D1A8; /* Morandi Green for border */
+        }
+        .text-green-700 {
+            color: #66BB6A; /* Slightly darker green for text for readability */
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold header-text-on-orange-red">🇦🇪 杜拜快閃旅程</h1>
+            
+        </header>
+
+        <nav class="mb-8 bg-white rounded-xl shadow-lg p-4 flex flex-wrap justify-center md:justify-around space-x-2 md:space-x-4 border border-gray-200">
+            <button class="main-tab-button py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200" onclick="showTab('overview')">總覽</button>
+            <button class="main-tab-button py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200" onclick="showTab('day1')">第一日行程</button>
+            <button class="main-tab-button py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200" onclick="showTab('day2')">第二日行程</button>
+            <button class="main-tab-button py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200" onclick="showTab('optional')">額外探索選項</button>
+            <button class="main-tab-button py-2 px-4 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors duration-200" onclick="showTab('prep')">行前準備與備註</button>
+        </nav>
+
+        <main id="content-area" class="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-200">
+            <div id="overview-content" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">歡迎來到杜拜</h2>
+                <p class="text-gray-700 mb-4">杜拜是阿拉伯聯合大公國的璀璨明珠，一座在沙漠中崛起的現代化大都市。</p>
+                <p class="text-gray-700 mb-4">杜拜的起源可追溯到18世紀，當時它是一個小漁村，主要經濟活動是珍珠採集和貿易。杜拜灣（Dubai Creek）為其提供了天然的港口，使其逐漸發展成為重要的貿易中心。19世紀末，馬克圖姆家族的統治奠定了現代杜拜的基礎。20世紀中葉，石油的發現加速了杜拜的轉型，但杜拜的領導人意識到石油儲量有限，因此積極推動經濟多元化，大力發展貿易、旅遊和金融業。憑藉著大膽的願景和龐大的投資，杜拜從一個沙漠中的小城鎮，一躍成為如今全球矚目的國際大都市。</p>
+                <p class="text-gray-700 mb-6">它以其雄偉的摩天大樓、奢華的購物體驗、迷人的文化遺產和不斷創新的精神而聞名於世。從世界最高的哈里發塔到傳統的香料市集，杜拜融合了未來感與深厚的歷史底蘊，為每位旅客帶來獨特的體驗。</p>
+                <p class="text-gray-700 mb-6">這份行程將帶您高效探索杜拜的精華，即使是短暫的轉機時間，也能讓您盡情感受這座城市的魅力。</p>
+                <div class="flex justify-center">
+                    <img src="https://res.klook.com/image/upload/fl_lossy.progressive,q_65/w_1080/w_80,x_15,y_15,g_south_west,l_Klook_water_br_trans_yhcmh3/activities/wnkhtwo4n0dhe6zmrbcs.jpg" alt="哈里發塔" class="rounded-lg shadow-md max-w-full h-auto">
+                </div>
+                <p class="text-center text-sm text-gray-500 mt-2">宏偉的哈里發塔，杜拜的標誌性建築</p>
+            </div>
+
+            <div id="day1-content" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">第一日行程 (6月24日)</h2>
+                <div id="day1-itinerary-items" class="space-y-8">
+                    <!-- Day 1 itinerary items will be rendered here -->
+                </div>
+            </div>
+
+            <div id="day2-content" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">第二日行程 (6月25日)</h2>
+                <div id="day2-itinerary-items" class="space-y-8">
+                    <!-- Day 2 itinerary items will be rendered here -->
+                </div>
+            </div>
+
+            <div id="optional-content" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">額外探索選項</h2>
+                <div id="optional-tours-container" class="grid md:grid-cols-2 gap-8">
+                    <!-- Optional tours will be rendered here -->
+                </div>
+            </div>
+
+            <div id="prep-content" class="tab-content hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">行前準備與備註</h2>
+                <div id="prep-accordion" class="space-y-4">
+                    <!-- Prep accordion will be rendered here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const itineraryData = [
+            {
+                id: 'arrival', day: 1,
+                time: '12:05 PM - 2:00 PM',
+                title: '抵達、入境與飯店接駁',
+                icon: '✈️',
+                description: '您的EK 305班機從上海浦東(PVG)抵達杜拜(DXB)。下機後請跟隨「入境」指示，在海關前向「阿聯酋櫃檯」出示住宿券。移民官會提供免費1GB SIM卡。完成入境後，由專屬接駁車送您至「杜拜千禧機場飯店」。',
+                details: `
+                    <h3 class="text-xl font-semibold mb-2">詳細流程</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>航班抵達:</strong> EK 305 預計於 12:05 PM 降落杜拜國際機場 (DXB)。</li>
+                        <li><strong>入境手續:</strong> 準備好護照與阿聯酋航空代辦的簽證(建議列印紙本)。海關會進行虹膜掃描，請勿配戴有色隱形眼鏡。</li>
+                        <li><strong>領取SIM卡:</strong> 移民官會提供一張免費的1GB SIM卡，請立即啟用。</li>
+                        <li><strong>飯店接駁:</strong> 阿聯酋航空工作人員將引導您至接駁區，搭車前往「杜拜千禧機場飯店」。</li>
+                    </ul>
+                `
+            },
+            {
+                id: 'lunch', day: 1,
+                time: '2:00 PM - 3:30 PM',
+                title: '飯店入住與免費午餐',
+                icon: '🏨',
+                description: '抵達飯店後快速辦理入住，飯店已習慣接待轉機旅客，流程高效。隨後即可在飯店餐廳享用阿聯酋航空提供的免費自助午餐，補充體力，為下午的行程做準備。',
+                details: `
+                    <h3 class="text-xl font-semibold mb-2">飯店資訊</h3>
+                    <p class="text-gray-700 mb-4"><strong>飯店名稱:</strong> 杜拜千禧機場飯店 (Copthorne Airport Hotel)<br>飯店提供免費住宿、三餐(入住時選擇午餐或早餐)及機場接駁。午餐供應至下午4:00。</p>
+                    <h3 class="text-xl font-semibold mb-2">餐點提醒</h3>
+                    <p class="text-gray-700">飯店自助餐點豐富，包含多樣主食、沙拉、甜點及飲品，是節省旅費與時間的好選擇。</p>
+                `
+            },
+            {
+                id: 'downtown', day: 1,
+                time: '3:30 PM - 8:00 PM',
+                title: '杜拜市中心探索',
+                icon: '🏙️',
+                description: '搭乘地鐵前往世界最大的「杜拜購物中心」，感受其宏偉規模，並在周圍欣賞哈里發塔的壯麗外觀。為隔天的日出登塔預熱。',
+                details: `
+                    <h3 class="text-xl font-semibold mb-2">杜拜市中心景點</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                       <li><strong>交通方式：</strong> 從飯店步行至 <strong>GGICO 地鐵站 (紅線 R15)</strong> 約5-10分鐘。搭乘紅線可直達 <strong>哈里發塔/杜拜購物中心地鐵站 (紅線 R25)</strong>，車程約20-25分鐘。</li>
+                       <li class="font-semibold text-gray-700"><strong>沿線地鐵景點備註：</strong> 搭乘地鐵紅線時，您可以從車窗看到許多著名地標，例如：
+                            <ul class="list-disc list-inside ml-4">
+                                <li><strong>未來博物館 (Museum of the Future):</strong> 流線型建築外觀非常醒目。</li>
+                                <li><strong>杜拜之窗 (Dubai Frame):</strong> 巨大的相框形狀建築。</li>
+                                <li><strong>Emirates Towers (R23):</strong> 標誌性的阿聯酋大廈。</li>
+                                <li><strong>World Trade Centre (R22):</strong> 杜拜世界貿易中心。</li>
+                                <li><strong>Financial Centre (R24):</strong> 杜拜金融中心區。</li>
+                            </ul>
+                       </li>
+                       <li><strong>杜拜購物中心 (The Dubai Mall):</strong> 全球最大購物中心，內部有水族館、溜冰場等設施。從地鐵站需步行約15分鐘的空橋才能抵達。</li>
+                       <li><strong>哈里發塔外觀 (Burj Khalifa):</strong> 在購物中心外的湖邊或鄰近的 Souk Al Bahar 市集，都是欣賞哈里發塔雄姿的絕佳地點。</li>
+                       <li class="font-semibold text-red-600"><strong>杜拜噴泉 (Dubai Fountain) - 重要更新:</strong> 目前噴泉正在大規模整修中，預計至2025年10月才會重新開放。您無法看到水舞表演，但周圍已安裝大型數位螢幕播放視覺內容。</li>
+                    </ul>
+                `
+            },
+            {
+                id: 'dinner', day: 1,
+                time: '8:00 PM - 10:00 PM',
+                title: '返回飯店與免費晚餐',
+                icon: '🍽️',
+                description: '結束下午的探索後，搭乘地鐵紅線從「哈里發塔/杜拜購物中心站」返回「GGICO站」，步行回飯店享用豐盛的免費晚餐，並為隔天清晨的重頭戲儲備體力。',
+                details: `
+                    <h3 class="text-xl font-semibold mb-2">晚餐資訊</h3>
+                    <p class="text-gray-700 mb-4">飯店晚餐供應至午夜 12:30，讓您的時間安排更有彈性。</p>
+                    <h3 class="text-xl font-semibold mb-2">休息提醒</h3>
+                    <p class="text-gray-700">隔天需非常早起，建議晚餐後盡早休息。雖然飯店有泳池和酒吧，但充足的睡眠對享受日出體驗至關重要。</p>
+                `
+            },
+            {
+                id: 'sunrise', day: 2,
+                time: '4:00 AM - 7:00 AM',
+                title: '哈里發塔日出體驗',
+                icon: '☀️',
+                description: '清晨出發，登上世界第一高樓哈里發塔的「At The Top」觀景台，見證太陽從地平線升起，將整座城市染成金色的壯麗奇景。',
+                details: `
+                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+                        <p class="font-bold">關鍵交通決策！</p>
+                        <p>為趕上 05:00 的入場時間，您<strong>必須搭乘計程車或叫車服務(Uber/Careem)</strong>。杜拜地鐵於清晨 05:00 才開始營運，絕對來不及。請務必在前一晚請飯店協助預約車輛。</p>
+                     </div>
+                     <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>起床與出發:</strong> 建議 03:45 AM 起床，04:00 AM 從飯店出發。</li>
+                        <li><strong>交通方式:</strong> 計程車車程約12分鐘，費用約 40-50 迪拉姆。</li>
+                        <li><strong>抵達與登塔:</strong> 在 05:00 AM 前抵達入口 (位於杜拜購物中心 LG 層)，預留時間安檢，享受無與倫比的日出體驗。</li>
+                     </ul>
+                `
+            },
+            {
+                id: 'departure', day: 2,
+                time: '7:00 AM - 10:30 AM',
+                title: '直達機場，準備啟程',
+                icon: '🛫',
+                description: '看完日出後，您可以選擇最高效的方案：直接從「哈里發塔/杜拜購物中心站」搭乘地鐵紅線前往機場，無需返回飯店，為登機手續預留充裕時間。',
+                details: `
+                    <h3 class="text-xl font-semibold mb-2">高效離境方案</h3>
+                    <p class="text-gray-700 mb-4">這是一個優化時間的選擇，讓您不必為了早餐和接駁車而趕回飯店。您可以在機場用餐。</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>地鐵路線:</strong> 從「哈里發塔/杜拜購物中心站」(R25) 搭乘紅線，可直達「機場第3航廈站」(R13) 或「機場第1航廈站」(R14)。</li>
+                        <li><strong>下車站點:</strong> 阿聯酋航空主要使用<strong>第3航廈 (Terminal 3)</strong>，請在「Airport Terminal 3」站下車。車程約25分鐘。</li>
+                        <li><strong>抵達機場:</strong> 建議在 07:45 AM 前抵達機場，為 10:30 AM 起飛的 EK 111 航班預留充足的安檢與出境時間。</li>
+                     </div>
+                `
+            }
+        ];
+
+        const prepData = [
+            { title: '簽證與入境', content: '您的杜拜簽證已由阿聯酋航空代辦，請隨身攜帶列印出的電子簽證。抵達時跟隨「入境」指示，向阿聯酋櫃檯出示住宿券。海關會進行虹膜掃描。若您佩戴變色美瞳，可能會被要求當場拔掉，建議入境杜拜時避免佩戴。' },
+            { title: '行李管理', content: '在出發機場(上海浦東PVG)辦理登機時，務必確認您的托運行李是「直掛」到最終目的地(布達佩斯BUD)。您在杜拜期間只需攜帶一個輕便的過夜包。' },
+            { title: '貨幣與交通卡', content: '杜拜貨幣為迪拉姆(AED)。建議在機場兌換少量現金。搭乘地鐵需購買 Nol Card，一張銀卡售價25迪拉姆，內含19迪拉姆儲值金。這種卡片可重複儲值使用五年，並可在離開杜拜時辦理退卡（可能需扣除手續費）。' },
+            { title: '飯店備品提醒', content: '飯店通常不提供牙刷與拖鞋，建議自行準備。房間插座可能不多，建議攜帶延長線或多孔轉接頭。房間內提供毛巾、肥皂、洗髮精、吹風機和兩瓶水。' },
+            { title: '文化禮儀與當地須知', content: '儘管杜拜是一個現代化且國際化的城市，但它畢竟位於一個穆斯林國家。在公共場所，建議穿著保守，確保肩膀和膝蓋被覆蓋。避免在有執照的場所之外的公共場所飲酒。在拍照時，特別是拍攝當地居民時，請務必保持尊重，如果可能，請先徵求對方同意。' }
+        ];
+
+        const optionalToursData = [
+            {
+                title: 'Jumeirah 阿拉伯風情體驗',
+                image: 'https://i.ytimg.com/vi/7MawW7eFX0I/maxresdefault.jpg', // Jumeirah Abra Tour image
+                description: '想體驗傳統阿拉伯風情，可搭地鐵紅線至「Mall of the Emirates 站」，再轉乘計程車(約10-15分鐘)前往「朱美拉古城市集」(Souk Madinat Jumeirah)。',
+                details: '在這裡您可以搭乘傳統的 Abra 小船遊覽運河，從水上以絕佳視角欣賞著名的<strong>帆船飯店(Burj Al Arab)</strong>。古城市集本身也是個充滿異國風情的景點，適合拍照與閒逛，但商品價格會比舊城區高。'
+            },
+            {
+                title: '杜拜舊城區歷史漫步',
+                image: 'https://www.cathaypacific.com/content/dam/focal-point/cx/inspiration/2023/08/Dubai-Hidden-Gems-Old-Dubai-building-courtesyimages-HERO.renditionimage.1700.1133.jpg', // Updated image URL for Old Dubai historical walk
+                description: '對歷史文化有興趣，可從市中心搭地鐵至「Sharaf DG 站」或「Burjuman 站」轉乘綠線，探索「Al Fahidi 歷史街區」與「Al Seef」河岸區。',
+                details: '這裡保留了杜拜過去的建築風格，與新城區的摩天大樓形成強烈對比。您可以在此感受杜拜的另一面，但請注意許多店家營業時間較晚。Dcard作者經驗：星期五一大早前往時，杜拜非常空曠，星巴克08:00開門，餐廳商店大多未開，繞一圈大約花費一個半小時。'
+            }
+        ];
+
+        const contentArea = document.getElementById('content-area');
+        const day1ItineraryItemsContainer = document.getElementById('day1-itinerary-items');
+        const day2ItineraryItemsContainer = document.getElementById('day2-itinerary-items');
+        const optionalToursContainer = document.getElementById('optional-tours-container');
+        const prepAccordion = document.getElementById('prep-accordion');
+        let transportChartInstance = null;
+        
+        function renderItineraryItem(item, containerElement) {
+            const itemDiv = document.createElement('div');
+            itemDiv.id = `item-${item.id}`;
+            itemDiv.className = 'bg-white rounded-xl shadow-sm p-4 border border-gray-200';
+            itemDiv.innerHTML = `
+                <div class="flex items-center mb-3">
+                    <span class="text-3xl mr-3">${item.icon}</span>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800">${item.title}</h3>
+                        <p class="font-semibold text-lg text-gray-700">${item.time}</p>
+                    </div>
+                </div>
+                <p class="text-gray-600 mb-4">${item.description}</p>
+                <div class="prose max-w-none prose-p:text-gray-700 prose-li:text-gray-700">
+                    ${item.details}
+                </div>
+            `;
+            containerElement.appendChild(itemDiv);
+        }
+
+        function renderDay1Itinerary() {
+            day1ItineraryItemsContainer.innerHTML = '';
+            const day1Items = itineraryData.filter(item => item.day === 1);
+            day1Items.forEach(item => renderItineraryItem(item, day1ItineraryItemsContainer));
+        }
+
+        function renderDay2Itinerary() {
+            day2ItineraryItemsContainer.innerHTML = '';
+            const day2Items = itineraryData.filter(item => item.day === 2);
+            day2Items.forEach(item => renderItineraryItem(item, day2ItineraryItemsContainer));
+        }
+
+        function renderPrepAccordionItems() {
+            prepAccordion.innerHTML = '';
+            prepData.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'border border-gray-200 rounded-lg';
+                div.innerHTML = `
+                    <button class="w-full flex justify-between items-center p-4 text-left font-semibold" onclick="toggleAccordion(this)">
+                        <span>${item.title}</span>
+                        <svg class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="hidden p-4 pt-0 text-gray-700">
+                        ${item.content}
+                    </div>
+                `;
+                prepAccordion.appendChild(div);
+            });
+        }
+        
+        function toggleAccordion(button) {
+            const content = button.nextElementSibling;
+            const icon = button.querySelector('svg');
+            content.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        function renderOptionalToursItems() {
+            optionalToursContainer.innerHTML = '';
+            optionalToursData.forEach(tour => {
+                const div = document.createElement('div');
+                div.className = 'bg-white rounded-xl shadow-lg overflow-hidden transition-transform hover:scale-105';
+                div.innerHTML = `
+                    <img src="${tour.image}" alt="${tour.title}" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold mb-2">${tour.title}</h3>
+                        <p class="text-gray-600 mb-4">${tour.description}</p>
+                        <p class="text-sm text-gray-800">${tour.details}</p>
+                    </div>
+                `;
+                optionalToursContainer.appendChild(div);
+            });
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.querySelectorAll('.main-tab-button').forEach(button => button.classList.remove('active'));
+            
+            document.getElementById(`${tabId}-content`).classList.remove('hidden');
+            document.querySelector(`.main-tab-button[onclick*="showTab('${tabId}')"]`).classList.add('active');
+
+            if (transportChartInstance) {
+                transportChartInstance.destroy();
+                transportChartInstance = null;
+            }
+
+            if (tabId === 'day1') {
+                renderDay1Itinerary();
+            } else if (tabId === 'day2') {
+                renderDay2Itinerary();
+            } else if (tabId === 'prep') {
+                renderPrepAccordionItems();
+            } else if (tabId === 'optional') {
+                renderOptionalToursItems();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showTab('overview');
+        });
+    </script>
+</body>
+</html>
